@@ -169,8 +169,57 @@ var app = new Vue({
 		},
 		addPackage() {
 			this.showScreen('vp-add-package');
+			$('#pkgAdditionSelect').empty();
+			var options = "";
+
+			// build select
+			var additions = this.getHotelAdditions();
+
+			if (!additions.length) {
+				options += `
+					<option value="-1">
+						You must add a theme before you add Benefits
+					</option>
+				`;
+			} else {
+				for (i=0; i<additions.length; i++) {
+					var addition = additions[i];
+					options += `
+						<option value="${i}">${addition.name[this.lang]}</option>
+					`;
+				}
+			}
+
+			$('#pkgAdditionSelect').append(options);
 		},
 		createAddPackageDisplay() {
+		},
+		// additions
+		getHotelAdditions() {
+			var tags = this.hotel.tags;
+			var additions = [];
+
+			for (var i=0; i<package_info.additions.length; i++) {
+				var addition = package_info.additions[i];
+				var tagList = addition.tags;
+				
+				var enabled = false;
+
+				for (var j=0; j<tagList.length; j++) {
+					var currentTag = tagList[j];
+					// enabled for all
+					if (currentTag === -1) {
+						enabled = true;
+					}
+					// is in this hotels list
+					if (tagList.indexOf(currentTag) !== -1) {
+						enabled = true;
+					}
+				}
+				additions.push(addition);
+			}
+
+			return additions;
 		},
  		// global functions
 		saveData() {
