@@ -97,7 +97,7 @@ var package = {
 		'en-gb': "Enjoy a English Breakfast, followed by 9 holes on our incredible course",
 		'nl': "Ontbijt en Golf - heel lekker toch"
 	},
-	additions: [1, 2],
+	additions: [1],
 	// assuming there's a site wide currency converter...
 	current_cost: 400,
 	discount: 10,
