@@ -72,10 +72,9 @@ function jsVendor() {
 
 function js() {
 	var order = streamqueue({ objectMode: true },
-			src('./src/content/js/main.js'),
-			src('./src/content/js/3.js'),
-			src('./src/content/js/2.js'),
-			src('./src/content/js/1.js'))
+			src('./src/content/js/server-data.js'),
+			src('./src/content/js/helpers.js'),
+			src('./src/content/js/main.js'))
 
 	if (buildMode) {
 		console.log('Built');
@@ -155,7 +154,7 @@ function img() {
 // Watch files
 
 function watchFiles() {
-	watch('./src/content/css/*', css);
+	watch('./src/content/css/**', css);
 	watch('./src/content/js/*', js);
 	watch('./src/content/img/*', img);
 	watch('./src/*.html', html);

@@ -23,20 +23,176 @@
 <body>
 
 	<div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom">
-		<h5 class="my-0 mr-md-auto font-weight-normal">Luxury Hotel Company</h5>
+		<h5 class="my-0 mr-md-auto font-weight-normal">
+			<a class="text-dark" href="/">Luxury Hotel Company</a>
+		</h5>
 		<nav class="my-2 my-md-0 mr-md-3">
-			<a class="p-2 text-dark" href="#">Links 1</a>
-			<a class="p-2 text-dark" href="#">Links 2</a>
-			<a class="p-2 text-dark" href="#">Links 3</a>
+			<a class="p-2 text-dark" href="/?id=1">View Hotel 1</a>
+			<a class="p-2 text-dark" href="/?id=2">View Hotel 2</a>
+			<a class="p-2 text-dark" href="/?id=3">View Hotel 3</a>
 		</nav>
-		<a class="btn btn-outline-primary" href="#">Log In</a>
+		<a class="btn btn-outline-dark" onclick="app.switchLang()">Langauge</a>
 	</div>
 
 	<!-- Main app starts here -->
-	<div class="container text-center pb-md-5">
+	<div class="container pb-md-5">
 		<div id="app" v-cloak>
-			<h1 class="display-4">{{message}}</h1>
-			<p class="lead">Quickly build an effective pricing table for your potential customers with this Bootstrap example. It's built with default Bootstrap components and utilities with little customization.</p>
+			<div id="vp-add-package" class="vp-screen">
+				<h1 class="display-4 text-center">Add Package</h1>
+				<div class="form-group">
+					<label for="pkgTitle">Package Name</label>
+					<input type="text" class="form-control" id="pkgTitle">
+				</div>
+				<div class="form-group">
+					<label for="pkgDescription">Package Description</label>
+					<textarea class="form-control" id="pkgDescription" rows="3"></textarea>
+				</div>
+				<hr />
+				<p class="lead">You can add as many benefits as you want to a package</p>
+				<div class="form-group">
+				<label for="pkgAdditionSelect">Select Benefits</label>
+					<select class="form-control" id="pkgAdditionSelect">
+						<option>1</option>
+						<option>2</option>
+						<option>3</option>
+						<option>4</option>
+						<option>5</option>
+					</select>
+				</div>
+				 <button type="button" class="btn btn-primary">Add Benefit</button>
+
+				<p class="mt-4 mb-0"><strong>Selected Benefits:</strong></p>
+				<div class="currentBenefits">
+					No Benefits Selected
+				</div>
+
+				<hr />
+				<div class="form-group">
+					<label for="pkgCurrentCost">Current Cost (before discount)</label>
+					<div class="input-group">
+						<div class="input-group-prepend">
+						<div class="input-group-text">€</div>
+						</div>
+						<input type="text" class="form-control" id="pkgCurrentCost">
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="pkgDiscount">Discount Percentage</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="pkgDiscount">
+						<div class="input-group-append">
+							<div class="input-group-text">%</div>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="pkgActualCost">Actual Cost (after discount)</label>
+					<div class="input-group">
+						<div class="input-group-prepend">
+						<div class="input-group-text">€</div>
+						</div>
+						<input type="text" class="form-control" id="pkgActualCost">
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="pkgAvailable">Quantity Available</label>
+					<input type="text" class="form-control" id="pkgAvailable">
+				</div>
+			</div>
+
+			<div id="vp-main" class="vp-screen text-center">
+				<h1 class="display-4">Packages</h1>
+				<span v-if="hotelLoaded">
+					<p class="lead">{{ hotel.name }}</p>
+
+					<hr />
+
+					<h4 class="mt-4">Current Themes</h4>
+					<button type="button" class="btn btn-sm btn-outline-dark mb-4" @click="addTag">Add New Hotel Theme</button>
+
+					<div class="tags">
+						<span v-for="(tag, i) in hotel.tags">
+							<a href="#" class="badge badge-dark mr-1" @click="removeTag(i)">
+								{{ 
+									getTagName(tag)
+								}} &#x292B;
+							</a>
+						</span>
+					</div>
+
+					<hr />
+
+					<h4 class="mt-4">Current Packages</h4>
+					<button type="button" class="btn btn-sm btn-outline-dark mb-4" @click="addPackage">Add New Package</button>
+
+					<div class="packages">
+						<div class="row" v-if="hotelHasPackages">
+							<div class="col-sm-4" v-for="(package, i) in hotel.packages">
+								<!-- package display -->
+								<div class="card">
+									<div class="card-body">
+										<h5 class="card-title">
+											{{ package.title[lang] }}
+										</h5>
+										<hr />
+										<span class="badge badge-success mb-3">
+											Available
+										</span>
+										<p class="card-text">
+											{{ package.description[lang] }}
+										</p>
+
+										<div v-for="(addition, j) in package.additions">
+											<a href="#" class="badge badge-dark mr-1">
+												{{ 
+													getAdditionName(addition)
+												}}
+											</a>
+										</div>
+
+										<br />
+
+										<table class="table">
+											<tr>
+												<td>Cost</td>
+												<td>€{{ package.current_cost }}</td>
+											</tr>
+											<tr>
+												<td>Discount</td>
+												<td>{{ package.discount }}%</td>
+											</tr>
+											<tr>
+												<td>List Price</td>
+												<td>€{{ package.actual_cost }}</td>
+											</tr>
+											<tr>
+												<td>Available</td>
+												<td>{{ package.available }}</td>
+											</tr>
+											<tr>
+												<td>Sold</td>
+												<td>{{ package.sold }}</td>
+											</tr>
+										</table>
+
+										<a href="#" @click="deletePackage(i)" class="card-link text-danger">Delete Package</a>
+										<a href="#" class="card-link">Edit Package</a>
+									</div>
+								</div>
+
+							</div>
+						</div>
+						<div v-else>
+							No Packages Available.
+						</div>
+					</div>
+				</span>
+				<span v-else>
+					<p class="lead">
+						Please select a hotel from the menu
+					</p>
+				</span>
+			</div>
 		</div>
 	</div>
 
