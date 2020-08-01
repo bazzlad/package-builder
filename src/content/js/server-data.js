@@ -14,7 +14,7 @@ var hotels = [
 	},
 	{
 		id: 3,
-		name: "Martins's Luxury B&B",
+		name: "Martin's Luxury B&B",
 		tags: [3],
 		packages: [] // an array of packages
 	}
@@ -79,6 +79,14 @@ var package_info = {
 			name: {
 				'en-gb': "Free Parking",
 				'nl': "Vrij Parkeren"
+			}
+		},
+		{
+			id: 4,
+			tags: [2], // which tags does this addition show for (-1 for all)
+			name: {
+				'en-gb': "Spa day",
+				'nl': "Spa Dag"
 			}
 		},
 	]

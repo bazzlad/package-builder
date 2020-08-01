@@ -2,7 +2,21 @@ var app = new Vue({
 	el: '#app',
 	data: {
 		hotel: null,
-		lang: 'en-gb'
+		lang: 'en-gb',
+		editMode: false,
+		editIndex: null,
+		// add package data
+		availableAdditions: [],
+		selectedAdditions: [],
+		// add package form
+		pkgTitle_en_gb: null,
+		pkgTitle_nl: null,
+		pkgDescription_en_gb: null,
+		pkgDescription_nl: null,
+		pkgCurrentCost: null,
+		pkgDiscount: null,
+		pkgActualCost: null,
+		pkgAvailable: null,
 	},
 	computed: {
 		hotelLoaded () {
@@ -125,6 +139,7 @@ var app = new Vue({
 		},
 		doAddTag() {
 			var tag = $('#addTagSelect option:selected').val();
+			tag = parseFloat(tag);
 			this.hotel.tags.push(tag);
 
 			this.saveData();
@@ -168,31 +183,263 @@ var app = new Vue({
 			this.saveData();
 		},
 		addPackage() {
+			this.resetPackage();
 			this.showScreen('vp-add-package');
-			$('#pkgAdditionSelect').empty();
-			var options = "";
-
+			
 			// build select
+			var options = "";
 			var additions = this.getHotelAdditions();
-
-			if (!additions.length) {
-				options += `
-					<option value="-1">
-						You must add a theme before you add Benefits
-					</option>
-				`;
-			} else {
-				for (i=0; i<additions.length; i++) {
-					var addition = additions[i];
-					options += `
-						<option value="${i}">${addition.name[this.lang]}</option>
-					`;
-				}
-			}
+			this.availableAdditions = additions;
 
 			$('#pkgAdditionSelect').append(options);
 		},
+		editPackage(index) {
+			if (event) {
+				event.preventDefault();
+			}
+
+			this.resetPackage();
+			this.editMode = true;
+			this.editIndex = index;
+			this.showScreen('vp-add-package');
+
+			// add data into fields
+			var package = this.hotel.packages[index];
+
+			this.pkgTitle_en_gb = package.title['en-gb'];
+			this.pkgTitle_nl = package.title['nl'];
+			this.pkgDescription_en_gb = package.description['en-gb'];
+			this.pkgDescription_nl = package.description['nl'];
+			this.pkgCurrentCost = package.current_cost;
+			this.pkgDiscount = package.discount;
+			this.pkgActualCost = package.actual_cost;
+			this.pkgAvailable = package.available;
+
+			// add additions
+			var additions = package_info.additions;
+			for (var i=0; i<additions.length; i++) {
+				var addition = additions[i];
+
+				if (package.additions.indexOf(addition.id) !== -1) {
+					this.selectedAdditions.push(addition);
+				} else {
+					// check if this addition is viewable by this hotel
+					var enabled = false;
+					for (var j=0; j<addition.tags.length; j++) {
+						var tag = addition.tags[j];
+						if (tag == -1) {
+							enabled = true;
+						}
+						if (this.hotel.tags.indexOf(tag) !== -1) {
+							enabled = true;
+						}
+					}
+					if (enabled) {
+						this.availableAdditions.push(addition);
+					}
+				}
+			}
+		},
 		createAddPackageDisplay() {
+		},
+		cancelPackage(event, confirm) {
+			if (event) {
+				event.preventDefault();
+			}
+			// get confirmation first
+			if (!confirm) {
+				var title = `
+					<span class="text-danger">Danger!</span>
+				`;
+				var message = `
+					Are you sure you want to cancel creating this package? You will lose any data entered.
+				`;
+				bootbox.confirm({
+					title: title,
+					message: message,
+					callback: (r) => {
+						if (r) {
+							app.cancelPackage(event, true);
+						}
+					}
+				});
+				return;
+			}
+
+			this.showScreen('vp-main');
+			
+			// reset data
+			this.resetPackage();
+		},
+		resetPackage() {
+			this.editMode = false;
+			this.editIndex = null;
+			this.availableAdditions = [];
+			this.selectedAdditions = [];
+			this.pkgTitle_en_gb = null;
+			this.pkgTitle_nl = null;
+			this.pkgDescription_en_gb = null;
+			this.pkgDescription_nl = null;
+			this.pkgCurrentCost = null;
+			this.pkgDiscount = null;
+			this.pkgActualCost = null;
+			this.pkgAvailable = null;
+		},
+		createPackageObj() {
+			var package = {
+				active: 1,
+				date_start: null,
+				date_end: null,
+				title: {
+					'en-gb': this.pkgTitle_en_gb,
+					'nl': this.pkgTitle_nl
+				},
+				description: {
+					'en-gb': this.pkgDescription_en_gb,
+					'nl': this.pkgDescription_nl
+				},
+				additions: [],
+				// assuming there's a site wide currency converter...
+				current_cost: this.pkgCurrentCost,
+				discount: this.pkgDiscount,
+				actual_cost: this.pkgActualCost,
+				available: this.pkgAvailable,
+				sold: 0
+			};
+
+			// add additions
+			for (var i=0; i<this.selectedAdditions.length; i++) {
+				var addition = this.selectedAdditions[i];
+				package.additions.push(addition.id);
+			}
+
+			return package;
+		},
+		validatePackage() {
+			if (!this.pkgTitle_en_gb) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Package Name (English) is required
+				`);
+				return false;
+			}
+
+			if (!this.pkgTitle_nl) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Package Name (Nederlands) is required
+				`);
+				return false;
+			}
+
+			if (!this.pkgDescription_en_gb) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Package Description (English) is required
+				`);
+				return false;
+			}
+
+			if (!this.pkgDescription_nl) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Package Description (Nederlands) is required
+				`);
+				return false;
+			}
+
+			if (!this.pkgCurrentCost) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Current Cost is required
+				`);
+				return false;
+			}
+
+			if (!typeof(parseFloat(this.pkgCurrentCost)) == "number") {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Current Cost must be a number
+				`);
+				return false;
+			}
+
+			if (!this.pkgDiscount) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Discount Percentage is required
+				`);
+				return false;
+			}
+
+			if (!typeof(parseFloat(this.pkgDiscount)) == "number") {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Discount Percentage must be a number
+				`);
+				return false;
+			}
+
+			if (!this.pkgActualCost) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Actual Cost is required
+				`);
+				return false;
+			}
+
+			if (!typeof(parseFloat(this.pkgActualCost)) == "number") {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Actual Cost must be a number
+				`);
+				return false;
+			}
+
+			if (!this.pkgAvailable) {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Quantity Available is required
+				`);
+				return false;
+			}
+
+			if (!typeof(parseFloat(this.pkgAvailable)) == "number") {
+				bootbox.alert(`
+					<h4>There is an error with your Package</h4>
+					Quantity Available must be a number
+				`);
+				return false;
+			}
+
+			return true;
+		},
+		savePackage() {
+			// quick, rough validation
+			if (!this.validatePackage()) {
+				return false;
+			}
+
+			var package = this.createPackageObj();
+
+			if (this.editMode) {
+				this.hotel.packages[this.editIndex] = package;
+			} else {
+				this.hotel.packages.push(package);
+			}
+
+			// save data
+			this.saveData();
+
+			var message = "Package added";
+			if (this.editMode) {
+				message = "Package updated";
+			}
+
+			bootbox.alert(message, function() {
+				app.showScreen('vp-main');
+				app.resetPackage();
+			});
 		},
 		// additions
 		getHotelAdditions() {
@@ -212,14 +459,37 @@ var app = new Vue({
 						enabled = true;
 					}
 					// is in this hotels list
-					if (tagList.indexOf(currentTag) !== -1) {
+					if (tags.indexOf(currentTag) !== -1) {
 						enabled = true;
 					}
 				}
-				additions.push(addition);
+				if (enabled) {
+					additions.push(addition);
+				}
 			}
 
 			return additions;
+		},
+		addAddition() {
+			var addition;
+			var additionId = $('#pkgAdditionSelect option:selected').val();
+			additionId = parseFloat(additionId);
+			
+			var additionPos = _help.findInObjArray('id', this.availableAdditions, additionId, true);
+
+			if (additionPos !== null) {
+				addition = this.availableAdditions.splice(additionPos, 1);
+				this.selectedAdditions.push(addition[0]);
+			}
+		},
+		removeAddition(i) {
+			event.preventDefault();
+			var additionPos = _help.findInObjArray('id', this.selectedAdditions, i, true);
+
+			if (additionPos !== null) {
+				var addition = this.selectedAdditions.splice(additionPos, 1);
+				this.availableAdditions.push(addition[0])
+			}
 		},
  		// global functions
 		saveData() {

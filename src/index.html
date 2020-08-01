@@ -31,7 +31,7 @@
 			<a class="p-2 text-dark" href="/?id=2">View Hotel 2</a>
 			<a class="p-2 text-dark" href="/?id=3">View Hotel 3</a>
 		</nav>
-		<a class="btn btn-outline-dark" onclick="app.switchLang()">Langauge</a>
+		<a class="btn btn-outline-info" onclick="app.switchLang()">Langauge</a>
 	</div>
 
 	<!-- Main app starts here -->
@@ -40,25 +40,47 @@
 			<div id="vp-add-package" class="vp-screen">
 				<h1 class="display-4 text-center">Add Package</h1>
 				<div class="form-group">
-					<label for="pkgTitle">Package Name</label>
-					<input type="text" class="form-control" id="pkgTitle">
+					<label for="pkgTitle-en-gb">Package Name (English)</label>
+					<input type="text" class="form-control" v-model="pkgTitle_en_gb">
 				</div>
 				<div class="form-group">
-					<label for="pkgDescription">Package Description</label>
-					<textarea class="form-control" id="pkgDescription" rows="3"></textarea>
+					<label for="pkgTitle-nl">Package Name (Nederlands)</label>
+					<input type="text" class="form-control" v-model="pkgTitle_nl">
+				</div>
+				<div class="form-group">
+					<label for="pkgDescription-en-gb">Package Description (English)</label>
+					<textarea class="form-control" v-model="pkgDescription_en_gb" rows="3"></textarea>
+				</div>
+				<div class="form-group">
+					<label for="pkgDescription-nl">Package Description (Nederlands)</label>
+					<textarea class="form-control" v-model="pkgDescription_nl" rows="3"></textarea>
 				</div>
 				<hr />
 				<p class="lead">You can add as many benefits as you want to a package</p>
 				<div class="form-group">
 				<label for="pkgAdditionSelect">Select Benefits</label>
 					<select class="form-control" id="pkgAdditionSelect">
+						<option v-for="(addition, i) in availableAdditions" :value="addition.id">
+							{{addition.name[lang]}}
+						</option>
 					</select>
 				</div>
-				<button type="button" class="btn btn-primary">Add Benefit</button>
+				<button type="button" class="btn btn-outline-dark" @click="addAddition">Add Benefit</button>
 
 				<p class="mt-4 mb-0"><strong>Selected Benefits:</strong></p>
 				<div class="currentBenefits">
-					No Benefits Selected
+					<span v-if="selectedAdditions.length == 0">
+						No Benefits Selected
+					</span>
+					<span v-else>
+						<span v-for="(addition, i) in selectedAdditions">
+							<a href="#" class="badge badge-dark mr-1" @click="removeAddition(addition.id)">
+								{{ 
+									addition.name[lang]
+								}} &#x292B;
+							</a>
+						</span>
+					</span>
 				</div>
 
 				<hr />
@@ -68,13 +90,13 @@
 						<div class="input-group-prepend">
 						<div class="input-group-text">€</div>
 						</div>
-						<input type="text" class="form-control" id="pkgCurrentCost">
+						<input type="text" class="form-control" v-model="pkgCurrentCost">
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="pkgDiscount">Discount Percentage</label>
 					<div class="input-group">
-						<input type="text" class="form-control" id="pkgDiscount">
+						<input type="text" class="form-control" v-model="pkgDiscount">
 						<div class="input-group-append">
 							<div class="input-group-text">%</div>
 						</div>
@@ -86,13 +108,21 @@
 						<div class="input-group-prepend">
 						<div class="input-group-text">€</div>
 						</div>
-						<input type="text" class="form-control" id="pkgActualCost">
+						<input type="text" class="form-control" v-model="pkgActualCost">
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="pkgAvailable">Quantity Available</label>
-					<input type="text" class="form-control" id="pkgAvailable">
+					<input type="text" class="form-control" v-model="pkgAvailable">
 				</div>
+
+				<button type="button" class="btn btn-outline-danger float-right" @click="cancelPackage">
+					Cancel
+				</button>
+				<button type="button" class="btn btn-outline-primary" @click="savePackage">
+					Save Package
+				</button>
+
 			</div>
 
 			<div id="vp-main" class="vp-screen text-center">
@@ -171,7 +201,7 @@
 										</table>
 
 										<a href="#" @click="deletePackage(i)" class="card-link text-danger">Delete Package</a>
-										<a href="#" class="card-link">Edit Package</a>
+										<a href="#" @click="editPackage(i)" class="card-link">Edit Package</a>
 									</div>
 								</div>
 
