@@ -17,6 +17,12 @@ var app = new Vue({
 		pkgDiscount: null,
 		pkgActualCost: null,
 		pkgAvailable: null,
+		// add hotel form
+		hotelName: null,
+		hotelTags: [],
+		hotelSelectedTags: [],
+		// force hotel list to reload
+		hotelIndex: 0,
 	},
 	computed: {
 		hotelLoaded () {
@@ -31,6 +37,10 @@ var app = new Vue({
 		if (localStorage.getItem('hotels')) {
 			try {
 				hotels = JSON.parse(localStorage.getItem('hotels'));
+				// need to reload them as hotels isn't responsive
+				Vue.nextTick(function () {
+					app.hotelIndex++;
+				});
 			} catch(e) {
 				localStorage.removeItem('hotels');
 			}
@@ -44,6 +54,9 @@ var app = new Vue({
 
 		// show main view
 		$('#vp-main').show();
+
+
+		// code
 	},
 	methods: {
 		loadHotel(id) {
@@ -271,6 +284,29 @@ var app = new Vue({
 			// reset data
 			this.resetPackage();
 		},
+		calculateDiscount() {
+			if (!this.pkgCurrentCost) {
+				return;
+			}
+
+			if (!$.isNumeric(this.pkgCurrentCost)) {
+				this.pkgCurrentCost = null;
+				return;
+			}
+
+			if (!$.isNumeric(this.pkgDiscount)) {
+				this.pkgDiscount = null;
+				return;
+			}
+
+			var currentCost = parseFloat(this.pkgCurrentCost);
+			var discountPerc = parseFloat(this.pkgDiscount);
+
+			var discount = ((currentCost / 100) * discountPerc);
+			var actualCost = currentCost - discount;
+
+			this.pkgActualCost = actualCost;
+		},
 		resetPackage() {
 			this.editMode = false;
 			this.editIndex = null;
@@ -491,6 +527,114 @@ var app = new Vue({
 				this.availableAdditions.push(addition[0])
 			}
 		},
+		// hotel
+		getHotelLink(id) {
+			return '?id=' + id;
+		},
+		addNewHotel() {
+			var stepperVars = {
+				id: "setup-wizard",
+				// disableForwardBtn: true,
+				// array of functions to confirm each step
+				stepConfirm: [
+					// step 1
+					function() {
+						if (!app.hotelName) {
+							bootbox.alert(`
+								<h4>There is an error with your Hotel</h4>
+								Hotel name is required
+							`);
+							return false;
+						}
+						return true;
+					},
+					// step 2
+					function() {
+					}
+				],
+				// array of functions to run on each step load
+				stepInit: [
+					// step 1
+					function() {
+					},
+					// step 2
+					function() {
+					}
+				],
+				finish: function() {
+					app.createHotel();
+					app.showScreen('vp-main');
+					$("#setup-wizard").hide();
+
+					bootbox.confirm({
+						title: 'Hotel Created',
+						message: 'Would you like to add a package now?',
+						callback(r) {
+							if (r) {
+								app.addPackage();
+							}
+						}
+					});
+				}
+			};
+
+			// clone available tags
+			var tags = JSON.stringify(package_info.tags);
+			this.hotelTags = JSON.parse(tags);
+			this.hotelSelectedTags = [];
+			this.hotelName = null;
+
+			hotelStepper = new Stepper(stepperVars);
+			hotelStepper.init();
+			$("#setup-wizard").show();
+
+			$('.vp-screen').hide();
+		},
+		addTagToNewHotel(id) {
+			if (event) {
+				event.preventDefault();
+			}
+			var tagPos = _help.findInObjArray('id', this.hotelTags, id, true);
+
+			if (tagPos !== null) {
+				var tag = this.hotelTags.splice(tagPos, 1);
+				this.hotelSelectedTags.push(tag[0]);
+			}
+		},
+		removeTagFromNewHotel(id) {
+			if (event) {
+				event.preventDefault();
+			}
+			var tagPos = _help.findInObjArray('id', this.hotelSelectedTags, id, true);
+
+			if (tagPos !== null) {
+				var tag = this.hotelSelectedTags.splice(tagPos, 1);
+				this.hotelTags.push(tag[0]);
+			}
+		},
+		createHotel: function() {
+			// get last id
+			var id = (hotels[hotels.length-1].id + 1)
+			var tags = [];
+			for (var i=0; i<this.hotelSelectedTags.length; i++) {
+				var tag = this.hotelSelectedTags[i];
+				tags.push(tag.id);
+			}
+			var hotel = {
+				id: id,
+				name: this.hotelName,
+				tags: tags,
+				packages: [] // an array of packages
+			}
+			hotels.push(hotel);
+			this.saveData();
+
+			// reload hotel data
+			this.hotelIndex++;
+
+			// go to page
+			this.loadHotel(id);
+		},
  		// global functions
 		saveData() {
 			// save changes to local storage
@@ -507,3 +651,6 @@ var app = new Vue({
 		}
 	}
 });
+
+// keep the stepper outside of vue
+var hotelStepper;
