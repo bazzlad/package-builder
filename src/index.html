@@ -203,7 +203,6 @@
 				<button type="button" class="btn btn-outline-danger float-right" @click="cancelPackage">
 					Cancel
 				</button>
-				
 			</div>
 
 			<div id="vp-main" class="vp-screen text-center">
@@ -298,7 +297,7 @@
 
 					<div class="list-group">
 						<a class="list-group-item list-group-item-action" 
-							v-for="(hotel, i) in hotels" 
+							v-for="(hotel, i) in hotelList" 
 							:href="getHotelLink(hotel.id)"
 							:key="hotelIndex"
 						>

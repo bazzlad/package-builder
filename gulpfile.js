@@ -81,7 +81,7 @@ function js() {
 		console.log('Built');
 		return order
 		.pipe(concat('main.js'))
-			.pipe(uglify())
+			//.pipe(uglify())
 			.pipe(rename({
 				extname: '.min.js'
 			}))

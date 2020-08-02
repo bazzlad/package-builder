@@ -23,6 +23,7 @@ var app = new Vue({
 		hotelSelectedTags: [],
 		// force hotel list to reload
 		hotelIndex: 0,
+		hotelList: []
 	},
 	computed: {
 		hotelLoaded () {
@@ -32,31 +33,39 @@ var app = new Vue({
 			return this.hotel.packages.length;
 		}
 	},
-	mounted() {
-		// get data
-		if (localStorage.getItem('hotels')) {
-			try {
-				hotels = JSON.parse(localStorage.getItem('hotels'));
-				// need to reload them as hotels isn't responsive
-				Vue.nextTick(function () {
-					app.hotelIndex++;
-				});
-			} catch(e) {
-				localStorage.removeItem('hotels');
+	async mounted() {
+		if (!isLive) {
+			/* get local data */
+			if (localStorage.getItem('hotels')) {
+				try {
+					hotels = JSON.parse(localStorage.getItem('hotels'));
+					// need to reload them as hotels isn't responsive
+					Vue.nextTick(function () {
+						app.hotelIndex++;
+					});
+				} catch(e) {
+					localStorage.removeItem('hotels');
+				}
 			}
+		} else {
+			/* get server data */
+			var data = await axios.get(apiUrl + '/api/packages')
+			.then(function (response) {
+				server_data.clean(response.data);
+			});
 		}
+
+		// add reactivity to hotels
+		this.hotelList = hotels;
+
+		// show main view
+		$('#vp-main').show();
 
 		var hotelId = _help.url.getParamByName('id');
 		if (hotelId) {
 			hotelId = parseFloat(hotelId);
 		}
 		this.loadHotel(hotelId);
-
-		// show main view
-		$('#vp-main').show();
-
-
-		// code
 	},
 	methods: {
 		loadHotel(id) {
@@ -627,19 +636,48 @@ var app = new Vue({
 				packages: [] // an array of packages
 			}
 			hotels.push(hotel);
-			this.saveData();
-
-			// reload hotel data
-			this.hotelIndex++;
 
 			// go to page
 			this.loadHotel(id);
+
+			this.saveData(true);
+
+			// reload hotel data
+			this.hotelIndex++;
 		},
  		// global functions
-		saveData() {
-			// save changes to local storage
-			const parsed = JSON.stringify(hotels);
-			localStorage.setItem('hotels', parsed);
+		saveData(addNew) {
+			if (!isLive) {
+				// save changes to local storage
+				const parsed = JSON.stringify(hotels);
+				localStorage.setItem('hotels', parsed);
+			} else {
+				var hotel = this.hotel
+				var url = apiUrl + 'api/hotels/';
+				if (!addNew) {
+					 url += hotel.id;
+				}
+
+				var data = {
+					name: hotel.name,
+					tags: JSON.stringify(hotel.tags),
+					packages: JSON.stringify(hotel.packages)
+				}
+
+				if (!addNew) {
+					axios.put(url, data)
+					.then(function (response) {
+						// handle success
+						console.log('Put' + response.data);
+					})
+				} else {
+					axios.post(url, data)
+					.then(function (response) {
+						// handle success
+						console.log('Pushed' + response.data);
+					})
+				}
+			}
 		},
 		showScreen(screenName) {
 			if (!$('#' + screenName).length) {
