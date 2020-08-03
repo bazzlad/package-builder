@@ -164,6 +164,7 @@ var server_data = {
 			hotel.packages = JSON.parse(hotel.packages);
 		}
 		hotels = data.hotels;
+		hotels.sort((a, b) => (a.id > b.id) ? 1 : -1);
 		// tags
 		for (var i=0; i<data.package_info.tags.length; i++) {
 			var tag = data.package_info.tags[i];
