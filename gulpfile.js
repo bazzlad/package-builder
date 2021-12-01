@@ -74,6 +74,7 @@ function js() {
 	var order = streamqueue({ objectMode: true },
 			src('./src/content/js/server-data.js'),
 			src('./src/content/js/helpers.js'),
+			src('./src/content/js/stepperClass.js'),
 			src('./src/content/js/main.js'))
 
 	if (buildMode) {
